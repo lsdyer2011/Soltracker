@@ -1,0 +1,37 @@
+name: sol-trace
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'      # try to run every 5 minutes
+  workflow_dispatch:            # adds a manual "Run workflow" button for testing
+
+permissions:
+  contents: write              # lets the robot save its memory (state.json) back
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install requests
+
+      - name: run tracer
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          SOURCE_WALLET: ${{ secrets.SOURCE_WALLET }}
+          RPC_URL: ${{ secrets.RPC_URL }}
+        run: python bot.py
+
+      - name: save state
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add state.json
+          git commit -m "update state" || echo "no changes"
+          git push || echo "nothing to push"
